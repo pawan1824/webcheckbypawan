@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Scan {
+  id                 String    @id @default(cuid())
+  url                String
+  domain             String
+  status             String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  overallScore       Int?
+  securityScore      Int?
+  seoScore           Int?
+  accessibilityScore Int?
+  performanceScore   Int?
+  linksScore         Int?
+  sslValid           Boolean?  @default(false)
+  responseTimeMs     Int?
+  pageSizeBytes      Int?
+  errorMessage       String?
+  createdAt          DateTime  @default(now())
+  completedAt        DateTime?
+
+  findings Finding[]
+  metrics  Metric[]
+
+  @@index([url])
+  @@index([domain])
+  @@index([createdAt])
+}
+
+model Finding {
+  id          String   @id @default(cuid())
+  scanId      String
+  scan        Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  category    String   // SECURITY, SEO, ACCESSIBILITY, PERFORMANCE, LINKS
+  severity    String   // CRITICAL, HIGH, MEDIUM, LOW, INFO
+  title       String
+  description String
+  remediation String?
+  evidence    String?
+  createdAt   DateTime @default(now())
+
+  @@index([scanId])
+  @@index([category])
+  @@index([severity])
+}
+
+model Metric {
+  id        String   @id @default(cuid())
+  scanId    String
+  scan      Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+  unit      String?
+  createdAt DateTime @default(now())
+
+  @@index([scanId])
+}
+
